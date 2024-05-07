@@ -7,6 +7,14 @@
 #include <sys/utsname.h>
 #include <unistd.h>
 
+#define CHECK(input, error, value)                                             \
+  do {                                                                         \
+    if (input == value) {                                                      \
+      perror(error);                                                           \
+      exit(1);                                                                 \
+    }                                                                          \
+  } while (0)
+
 typedef struct {
   long seconds;
   long minutes;
@@ -45,8 +53,9 @@ static char *get_user_hostname() {
   char hostname[HOST_NAME_MAX];
   int host_res = gethostname(hostname, HOST_NAME_MAX);
 
-  if (login_res != 0 || host_res != 0) {
-    perror("error while getting the hostname");
+  CHECK(host_res, "error getting hostname", -1);
+  if (login_res != 0) {
+    perror("error getting login info");
     exit(1);
   }
 
@@ -63,10 +72,8 @@ static char *get_model() {
   int product_version_file =
       open("/sys/devices/virtual/dmi/id/product_version", O_RDONLY);
 
-  if (product_name_file == -1 || product_version_file == -1) {
-    perror("error getting model");
-    exit(1);
-  }
+  CHECK(product_name_file, "error getting model", -1);
+  CHECK(product_version_file, "error getting model", -1);
 
   char *model_full = (char *)malloc(256 * 2);
   char *product_name = (char *)malloc(256);
@@ -78,10 +85,8 @@ static char *get_model() {
   remove_newline(&product_name, bytes_name);
   remove_newline(&product_version, bytes_version);
 
-  if (bytes_name == -1 || bytes_version == -1) {
-    perror("error reading model files");
-    exit(1);
-  }
+  CHECK(bytes_name, "error reading model files", -1);
+  CHECK(bytes_version, "error reading model files", -1);
 
   snprintf(model_full, 256 * 2, "%s %s", product_name, product_version);
 
@@ -97,10 +102,7 @@ static long get_uptime() {
 
   int res = sysinfo(&sys);
 
-  if (res != 0) {
-    perror("error while getting sysinfo");
-    exit(1);
-  }
+  CHECK(res, "error getting sysinfo", 0);
 
   return sys.uptime;
 }
@@ -109,18 +111,12 @@ static long get_uptime() {
 static char *get_os() {
   int os_file = open("/etc/os-release", O_RDONLY);
 
-  if (os_file == -1) {
-    perror("error getting operating system");
-    exit(1);
-  }
+  CHECK(os_file, "error getting operating system", -1);
 
   char *os = (char *)malloc(1024);
   ssize_t bytes_read = read(os_file, os, 1024);
 
-  if (bytes_read == -1) {
-    perror("error reading os");
-    exit(1);
-  }
+  CHECK(bytes_read, "error reading operating system", -1);
 
   char *token = strtok(os, "\"=\n");
   while ((token = strtok(0, "\"=\n")) != 0) {
@@ -140,10 +136,7 @@ static char *get_kernel() {
   struct utsname info;
   int result = uname(&info);
 
-  if (result == -1) {
-    perror("error getting kernel");
-    exit(1);
-  }
+  CHECK(result, "error getting kernel", -1);
 
   char *output = (char *)malloc(65 * 2);
   snprintf(output, 65 * 2, "%s %s", info.sysname, info.release);
@@ -152,7 +145,6 @@ static char *get_kernel() {
 }
 
 // some utility functions i use in the program
-
 static Time get_time(long seconds) {
   long seconds_remaining = seconds % 3600;
 
