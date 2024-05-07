@@ -20,14 +20,16 @@ static long get_uptime();
 static char *get_user_hostname();
 static char *get_model();
 static char *get_os();
+static char *get_kernel();
 
 int main(void) {
   char *user_hostname = get_user_hostname();
   char *model = get_model();
   Time time = get_time(get_uptime());
 
-  printf("%s\nos %s\nmodel %s\nuptime %ld:%02ld:%02ld\n", user_hostname,
-         get_os(), model, time.hours, time.minutes, time.seconds);
+  printf("%s\nos %s\nmodel %s\nkernel %s\nuptime %ld:%02ld:%02ld\n",
+         user_hostname, get_os(), model, get_kernel(), time.hours, time.minutes,
+         time.seconds);
 
   free(user_hostname);
   free(model);
@@ -103,6 +105,7 @@ static long get_uptime() {
   return sys.uptime;
 }
 
+// BUG THIS MIGHT LEAK MEMORY
 static char *get_os() {
   int os_file = open("/etc/os-release", O_RDONLY);
 
@@ -131,6 +134,24 @@ static char *get_os() {
   free(os);
   return token;
 }
+
+// the caller MUST free the memory returned!!
+static char *get_kernel() {
+  struct utsname info;
+  int result = uname(&info);
+
+  if (result == -1) {
+    perror("error getting kernel");
+    exit(1);
+  }
+
+  char *output = (char *)malloc(65 * 2);
+  snprintf(output, 65 * 2, "%s %s", info.sysname, info.release);
+
+  return output;
+}
+
+// some utility functions i use in the program
 
 static Time get_time(long seconds) {
   long seconds_remaining = seconds % 3600;
