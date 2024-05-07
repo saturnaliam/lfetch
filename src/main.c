@@ -7,6 +7,9 @@
 #include <sys/utsname.h>
 #include <unistd.h>
 
+#include "distros.h"
+#include "flower.h"
+
 #define CHECK(input, error, value)                                             \
   do {                                                                         \
     if (input == value) {                                                      \
@@ -23,18 +26,26 @@ typedef struct {
 
 static void remove_newline(char **input, ssize_t length);
 static Time get_time(long seconds);
+static char *os_logo(char *os);
 
 static long get_uptime();
 static char *get_user_hostname();
 static char *get_model();
 static char *get_os();
 static char *get_kernel();
+// TODO get # of packages
+// TODO get memory usage
+// TODO get cpu
+// TODO get gpu
+// TODO get wm / de
 
 int main(void) {
   char *user_hostname = get_user_hostname();
   char *model = get_model();
   Time time = get_time(get_uptime());
 
+  os_logo("gah");
+  return 1;
   printf("%s\nos %s\nmodel %s\nkernel %s\nuptime %ld:%02ld:%02ld\n",
          user_hostname, get_os(), model, get_kernel(), time.hours, time.minutes,
          time.seconds);
@@ -102,7 +113,7 @@ static long get_uptime() {
 
   int res = sysinfo(&sys);
 
-  CHECK(res, "error getting sysinfo", 0);
+  CHECK(res, "error getting sysinfo", -1);
 
   return sys.uptime;
 }
@@ -167,4 +178,10 @@ static void remove_newline(char **input, ssize_t length) {
       break;
     }
   }
+}
+
+static char *os_logo(char *os) {
+  const char *output = (char *)malloc(2048);
+
+  return NULL;
 }
