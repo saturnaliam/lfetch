@@ -2,6 +2,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/sysinfo.h>
 #include <sys/utsname.h>
 #include <unistd.h>
@@ -18,14 +19,15 @@ static Time get_time(long seconds);
 static long get_uptime();
 static char *get_user_hostname();
 static char *get_model();
+static char *get_os();
 
 int main(void) {
   char *user_hostname = get_user_hostname();
   char *model = get_model();
   Time time = get_time(get_uptime());
 
-  printf("%s\n%s\n%ld:%02ld:%02ld\n", user_hostname, model, time.hours,
-         time.minutes, time.seconds);
+  printf("%s\nos %s\nmodel %s\nuptime %ld:%02ld:%02ld\n", user_hostname,
+         get_os(), model, time.hours, time.minutes, time.seconds);
 
   free(user_hostname);
   free(model);
@@ -81,6 +83,8 @@ static char *get_model() {
 
   snprintf(model_full, 256 * 2, "%s %s", product_name, product_version);
 
+  close(product_name_file);
+  close(product_version_file);
   free(product_name);
   free(product_version);
   return model_full;
@@ -97,6 +101,35 @@ static long get_uptime() {
   }
 
   return sys.uptime;
+}
+
+static char *get_os() {
+  int os_file = open("/etc/os-release", O_RDONLY);
+
+  if (os_file == -1) {
+    perror("error getting operating system");
+    exit(1);
+  }
+
+  char *os = (char *)malloc(1024);
+  ssize_t bytes_read = read(os_file, os, 1024);
+
+  if (bytes_read == -1) {
+    perror("error reading os");
+    exit(1);
+  }
+
+  char *token = strtok(os, "\"=\n");
+  while ((token = strtok(0, "\"=\n")) != 0) {
+    if (strcmp(token, "PRETTY_NAME") == 0) {
+      break;
+    }
+  }
+
+  token = strtok(0, "\"=\n");
+
+  free(os);
+  return token;
 }
 
 static Time get_time(long seconds) {
