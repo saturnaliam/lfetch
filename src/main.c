@@ -44,8 +44,6 @@ int main(void) {
   char *model = get_model();
   Time time = get_time(get_uptime());
 
-  os_logo("gah");
-  return 1;
   printf("%s\nos %s\nmodel %s\nkernel %s\nuptime %ld:%02ld:%02ld\n",
          user_hostname, get_os(), model, get_kernel(), time.hours, time.minutes,
          time.seconds);
