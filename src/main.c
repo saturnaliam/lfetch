@@ -153,7 +153,7 @@ static char *get_kernel() {
   return output;
 }
 
-// some utility functions i use in the program
+// some utility functions used in the program
 static Time get_time(long seconds) {
   long seconds_remaining = seconds % 3600;
 
